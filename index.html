@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GreenByte – Dọn rác số, nuôi rừng xanh</title>
+<meta name="theme-color" content="#16a34a">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Cấu hình Tailwind: bảng màu "leaf" làm màu chủ đạo
+  tailwind.config = {
+    theme: { extend: {
+      colors: { leaf: { 50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',300:'#86efac',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d',800:'#166534',900:'#14532d' } },
+      fontFamily: { sans: ['Inter','system-ui','sans-serif'] }
+    } }
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: linear-gradient(180deg,#f0fdf4 0%,#ffffff 40%); }
+  .card { background:#fff; border:1px solid #dcfce7; border-radius:1.25rem; box-shadow:0 1px 3px rgba(22,101,52,.06); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; padding:.6rem 1.1rem; border-radius:.8rem; font-weight:600; transition:.15s; }
+  .btn-primary { background:#16a34a; color:#fff; } .btn-primary:hover { background:#15803d; }
+  .btn-ghost { background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; } .btn-ghost:hover { background:#dcfce7; }
+  .btn-danger { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+  .input { width:100%; padding:.55rem .8rem; border:1px solid #bbf7d0; border-radius:.7rem; background:#fff; outline:none; }
+  .input:focus { border-color:#16a34a; box-shadow:0 0 0 3px rgba(34,197,94,.2); }
+  .label { display:block; font-size:.8rem; font-weight:600; color:#166534; margin-bottom:.25rem; }
+  .screen { display:none; } .screen.active { display:block; animation:fade .25s ease; }
+  @keyframes fade { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  .tab-active { color:#15803d; background:#dcfce7; }
+  .tree-pop { animation:pop .5s ease; } @keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.25)} 100%{transform:scale(1)} }
+  .grow { transition:font-size .6s ease; }
+  .bar { transition:width .6s ease; }
+  details > summary { cursor:pointer; list-style:none; } details > summary::-webkit-details-marker { display:none; }
+</style>
+</head>
+<body class="font-sans text-slate-800 min-h-screen pb-24 md:pb-8">
+
+<!-- ======================= HEADER + ĐIỀU HƯỚNG ======================= -->
+<header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-leaf-100">
+  <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2 font-extrabold text-leaf-700 text-lg"><span class="text-2xl">🌱</span> GreenByte</div>
+    <!-- Menu desktop -->
+    <nav id="navDesktop" class="hidden md:flex gap-1"></nav>
+    <div id="userChip" class="text-sm text-leaf-800 font-semibold"></div>
+  </div>
+</header>
+<!-- Menu mobile (đáy màn hình) -->
+<nav id="navMobile" class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-leaf-100 grid grid-cols-4"></nav>
+
+<main class="max-w-5xl mx-auto px-4 py-6">
+
+<!-- ======================= MÀN HÌNH 1: KHẢO SÁT NỀN ======================= -->
+<section id="s-onboard" class="screen">
+  <div class="text-center mb-6">
+    <div class="text-5xl mb-2">🌍</div>
+    <h1 class="text-2xl md:text-3xl font-extrabold text-leaf-800">Chào mừng đến GreenByte</h1>
+    <p class="text-slate-600 mt-1">Dọn rác số – nuôi rừng xanh. Hãy bắt đầu bằng khảo sát nền (Tuần 0).</p>
+  </div>
+  <form id="onboardForm" class="grid md:grid-cols-2 gap-5">
+    <div class="card p-5 space-y-3">
+      <h2 class="font-bold text-leaf-800">👤 Hồ sơ (đăng nhập nhanh)</h2>
+      <div><label class="label">Tên hiển thị</label><input id="ob-name" class="input" required placeholder="VD: Minh Anh"></div>
+      <div><label class="label">Mã lớp</label><input id="ob-class" class="input" required placeholder="VD: K68-CNTT2"></div>
+      <p class="text-xs text-slate-500">Trên bảng xếp hạng bạn sẽ hiện dưới biệt danh ẩn danh. Dữ liệu chỉ lưu trong trình duyệt của bạn (localStorage).</p>
+    </div>
+    <div class="card p-5 space-y-3">
+      <h2 class="font-bold text-leaf-800">💾 Dung lượng đang dùng hiện tại (GB)</h2>
+      <div class="grid grid-cols-3 gap-3">
+        <div><label class="label">📱 Điện thoại</label><input id="ob-phone" type="number" min="0" step="0.1" class="input" value="0"></div>
+        <div><label class="label">☁️ Google Drive</label><input id="ob-drive" type="number" min="0" step="0.1" class="input" value="0"></div>
+        <div><label class="label">✉️ Email</label><input id="ob-email" type="number" min="0" step="0.1" class="input" value="0"></div>
+      </div>
+      <p class="text-xs text-slate-500">Xem trong Cài đặt → Bộ nhớ (điện thoại), drive.google.com/settings/storage (Drive & Gmail).</p>
+    </div>
+    <div class="card p-5 space-y-3 md:col-span-2">
+      <h2 class="font-bold text-leaf-800">📵 Thời gian sử dụng màn hình (Screen Time)</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="label">Số phút trung bình / ngày</label>
+          <input id="ob-min" type="number" min="0" max="1440" class="input" placeholder="VD: 330 (= 5 giờ 30 phút)">
+          <p class="text-xs text-slate-500 mt-1">Hoặc tải ảnh chụp màn hình Screen Time / Digital Wellbeing để đối chiếu:</p>
+          <input id="ob-shot" type="file" accept="image/*" class="mt-2 text-sm">
+        </div>
+        <div id="ob-preview" class="flex items-center justify-center border-2 border-dashed border-leaf-200 rounded-xl min-h-[120px] text-slate-400 text-sm">Xem trước ảnh</div>
+      </div>
+    </div>
+    <div class="md:col-span-2 flex flex-wrap gap-3 justify-end">
+      <button type="button" id="btnDemo" class="btn btn-ghost">✨ Tải dữ liệu mẫu để xem thử</button>
+      <button class="btn btn-primary">Bắt đầu hành trình 🌱</button>
+    </div>
+  </form>
+</section>
+
+<!-- ======================= MÀN HÌNH 2: DỌN RÁC SỐ & STREAMING ======================= -->
+<section id="s-clean" class="screen">
+  <h1 class="text-2xl font-extrabold text-leaf-800 mb-1">🧹 Trung tâm dọn rác số</h1>
+  <p class="text-slate-600 mb-5">Làm từng bước, nhập dung lượng <b>trước</b> và <b>sau</b> khi dọn – GreenByte tự tính số GB đã giải phóng.</p>
+
+  <div class="grid md:grid-cols-3 gap-4 mb-6">
+    <div class="card p-4"><div class="text-xs text-slate-500">Tổng GB đã dọn</div><div id="c-totalGB" class="text-3xl font-extrabold text-leaf-700">0</div></div>
+    <div class="card p-4"><div class="text-xs text-slate-500">Hoàn thành checklist</div><div id="c-doneTasks" class="text-3xl font-extrabold text-leaf-700">0/4</div></div>
+    <div class="card p-4"><div class="text-xs text-slate-500">MB streaming đã tránh</div><div id="c-totalMB" class="text-3xl font-extrabold text-leaf-700">0</div></div>
+  </div>
+
+  <h2 class="font-bold text-leaf-800 mb-2">✅ Checklist dọn dẹp</h2>
+  <div id="cleanList" class="space-y-3 mb-8"></div>
+
+  <h2 class="font-bold text-leaf-800 mb-2">📺 Giảm streaming không cần thiết</h2>
+  <div class="card p-5 mb-3">
+    <div class="grid md:grid-cols-4 gap-3 items-end">
+      <div><label class="label">Hoạt động</label>
+        <select id="st-type" class="input">
+          <option value="music">🎧 Chỉ nghe nhạc (tắt hình)</option>
+          <option value="podcast">🎙️ Podcast / bài giảng</option>
+          <option value="video">🎬 Xem video</option>
+        </select></div>
+      <div><label class="label">Thời lượng (phút)</label><input id="st-min" type="number" min="1" class="input" value="60"></div>
+      <div><label class="label">Chất lượng cũ</label><select id="st-from" class="input"></select></div>
+      <div><label class="label">Chất lượng mới</label><select id="st-to" class="input"></select></div>
+    </div>
+    <div id="st-tip" class="mt-3 text-sm bg-leaf-50 border border-leaf-200 rounded-xl p-3 text-leaf-800"></div>
+    <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
+      <div class="text-sm">Ước tính tránh tải: <b id="st-result" class="text-leaf-700 text-lg">0 MB</b></div>
+      <button id="st-add" class="btn btn-primary">Ghi nhận 📉</button>
+    </div>
+    <p class="text-xs text-slate-500 mt-2">Tốc độ dữ liệu là mức trung bình tham khảo (MB/giờ), thực tế thay đổi theo nền tảng &amp; nội dung.</p>
+  </div>
+  <div id="st-log" class="text-sm space-y-1"></div>
+</section>
+
+<!-- ======================= MÀN HÌNH 3: RỪNG XANH & FOCUS TIMER ======================= -->
+<section id="s-forest" class="screen">
+  <h1 class="text-2xl font-extrabold text-leaf-800 mb-1">🌳 Rừng xanh của lớp</h1>
+  <p class="text-slate-600 mb-5">Đặt điện thoại xuống – mỗi phiên tập trung hoàn thành sẽ trồng một cây. Rời máy sớm là cây sẽ héo 🥀.</p>
+
+  <div class="grid md:grid-cols-2 gap-5">
+    <!-- Bộ đếm -->
+    <div class="card p-6 text-center">
+      <div id="f-tree" class="grow" style="font-size:64px;line-height:1.1">🌱</div>
+      <div id="f-time" class="text-6xl font-extrabold text-leaf-800 tabular-nums my-2">25:00</div>
+      <div class="h-2 bg-leaf-100 rounded-full overflow-hidden mb-4"><div id="f-bar" class="bar h-full bg-leaf-500" style="width:0%"></div></div>
+      <div id="f-presets" class="flex justify-center gap-2 mb-3">
+        <button data-m="15" class="btn btn-ghost">15'</button>
+        <button data-m="25" class="btn btn-ghost">25'</button>
+        <button data-m="45" class="btn btn-ghost">45'</button>
+        <input id="f-custom" type="number" min="1" max="180" placeholder="Tuỳ chỉnh" class="input !w-28">
+      </div>
+      <div class="flex justify-center gap-2">
+        <button id="f-start" class="btn btn-primary">▶ Bắt đầu</button>
+        <button id="f-give" class="btn btn-danger hidden">Bỏ cuộc</button>
+      </div>
+      <p id="f-msg" class="text-sm text-slate-500 mt-3">Chạm “Bắt đầu”, rồi đặt điện thoại xuống nhé!</p>
+    </div>
+
+    <!-- Thử thách tuần -->
+    <div class="card p-6">
+      <h2 class="font-bold text-leaf-800 mb-1">🎯 Thử thách tuần: Dọn 1 GB / tuần</h2>
+      <p id="w-range" class="text-xs text-slate-500 mb-3"></p>
+      <div class="h-4 bg-leaf-100 rounded-full overflow-hidden"><div id="w-bar" class="bar h-full bg-gradient-to-r from-leaf-400 to-leaf-600" style="width:0%"></div></div>
+      <div class="flex justify-between text-sm mt-1"><span id="w-now" class="font-bold text-leaf-700">0 GB</span><span>Mục tiêu 1 GB</span></div>
+      <div id="w-msg" class="mt-3 text-sm bg-leaf-50 border border-leaf-200 rounded-xl p-3"></div>
+      <div class="grid grid-cols-2 gap-3 mt-4 text-center">
+        <div class="bg-leaf-50 rounded-xl p-3"><div class="text-xs text-slate-500">Cây đã trồng</div><div id="f-trees" class="text-2xl font-extrabold text-leaf-700">0</div></div>
+        <div class="bg-leaf-50 rounded-xl p-3"><div class="text-xs text-slate-500">Phút rời màn hình</div><div id="f-mins" class="text-2xl font-extrabold text-leaf-700">0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rừng -->
+  <div class="card p-5 mt-5">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-bold text-leaf-800">🌲 Khu rừng của lớp <span id="f-class" class="text-leaf-600"></span></h2>
+      <span class="text-xs text-slate-500">🌳 của bạn sáng · cây bạn bè mờ hơn</span>
+    </div>
+    <div id="forestGrid" class="flex flex-wrap gap-1 text-2xl min-h-[60px]"></div>
+  </div>
+
+  <!-- Bảng xếp hạng -->
+  <div class="card p-5 mt-5">
+    <h2 class="font-bold text-leaf-800 mb-1">🏆 Bảng xếp hạng lớp (ẩn danh)</h2>
+    <p class="text-xs text-slate-500 mb-3">Điểm = 20 × GB dọn + 1 × (phút rời màn hình ÷ 3) + 1 × (MB tránh tải ÷ 200). Các bạn khác là dữ liệu minh hoạ.</p>
+    <ol id="leaderboard" class="space-y-2"></ol>
+  </div>
+</section>
+
+<!-- ======================= MÀN HÌNH 4: IMPACT DASHBOARD ======================= -->
+<section id="s-impact" class="screen">
+  <h1 class="text-2xl font-extrabold text-leaf-800 mb-1">📊 Báo cáo tác động</h1>
+  <p class="text-slate-600 mb-5">Số đo thực tế là chính; kWh và CO₂ chỉ là <b>ước tính</b> kèm khoảng không chắc chắn.</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+    <div class="card p-5"><div class="text-2xl">💾</div><div class="text-xs text-slate-500">Tổng GB đã dọn</div><div id="i-gb" class="text-4xl font-extrabold text-leaf-700">0</div></div>
+    <div class="card p-5"><div class="text-2xl">📉</div><div class="text-xs text-slate-500">MB streaming tránh tải</div><div id="i-mb" class="text-4xl font-extrabold text-leaf-700">0</div></div>
+    <div class="card p-5"><div class="text-2xl">📵</div><div class="text-xs text-slate-500">Phút rời màn hình</div><div id="i-min" class="text-4xl font-extrabold text-leaf-700">0</div></div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-5">
+    <div class="card p-5">
+      <h2 class="font-bold text-leaf-800 mb-3">⚡ Quy đổi (ước tính)</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-leaf-50 rounded-xl p-4">
+          <div class="text-xs text-slate-500">Điện tiết kiệm</div>
+          <div id="i-kwh" class="text-2xl font-extrabold text-leaf-700">0 kWh</div>
+          <div id="i-kwh-r" class="text-xs text-slate-500"></div>
+        </div>
+        <div class="bg-leaf-50 rounded-xl p-4">
+          <div class="text-xs text-slate-500">CO₂ cắt giảm</div>
+          <div id="i-co2" class="text-2xl font-extrabold text-leaf-700">0 g</div>
+          <div id="i-co2-r" class="text-xs text-slate-500"></div>
+        </div>
+      </div>
+      <div id="i-eq" class="mt-3 text-sm text-slate-600"></div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="btnCard" class="btn btn-primary">🖼️ Tải Eco-card</button>
+        <button id="btnShare" class="btn btn-ghost">📤 Chia sẻ</button>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <h2 class="font-bold text-leaf-800 mb-2">🔎 Công thức &amp; giả định minh bạch</h2>
+      <table class="w-full text-sm">
+        <thead><tr class="text-left text-slate-500 text-xs"><th>Hệ số</th><th>Thấp</th><th>Giữa</th><th>Cao</th></tr></thead>
+        <tbody id="assumpTable" class="divide-y divide-leaf-100"></tbody>
+      </table>
+      <div class="text-xs text-slate-600 mt-3 space-y-1">
+        <p><b>kWh</b> = GB dọn × hệ số lưu trữ (tính cho 1 năm lưu giữ) + (MB tránh tải ÷ 1024) × hệ số mạng/data center + (phút ÷ 60) × công suất màn hình.</p>
+        <p><b>CO₂ (g)</b> = kWh × hệ số phát thải lưới điện × 1000.</p>
+        <p>Khoảng sai số lấy từ tổ hợp “Thấp” và “Cao” của mọi hệ số. Đây là mức xấp xỉ để giáo dục, không phải kiểm kê chính thức; hệ số có thể khác nhau tuỳ nhà cung cấp, thiết bị và năm.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-5 mt-5">
+    <h2 class="font-bold text-leaf-800 mb-2">🌱 So với khảo sát nền (Tuần 0)</h2>
+    <div id="i-base" class="text-sm text-slate-700"></div>
+  </div>
+
+  <div class="card p-5 mt-5 flex flex-wrap items-center justify-between gap-3">
+    <div class="text-sm text-slate-600">Dữ liệu lưu trên trình duyệt này. Xoá sẽ không thể khôi phục.</div>
+    <div class="flex gap-2">
+      <button id="btnEdit" class="btn btn-ghost">✏️ Sửa khảo sát nền</button>
+      <button id="btnReset" class="btn btn-danger">🗑️ Xoá toàn bộ dữ liệu</button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-8 bg-leaf-800 text-white px-4 py-2 rounded-xl shadow-lg text-sm opacity-0 pointer-events-none transition z-50"></div>
+
+<script>
+/* =====================================================================
+   GREENBYTE – Logic ứng dụng (Vanilla JS, 1 file)
+   Cấu trúc: 1) Hằng số  2) State & localStorage  3) Tiện ích
+             4) Điều hướng  5) Onboarding  6) Dọn rác & Streaming
+             7) Focus timer & Rừng  8) Impact & Eco-card  9) Khởi động
+   ===================================================================== */
+
+/* ---------- 1) HẰNG SỐ ---------- */
+const LS_KEY = 'greenbyte_v1';
+
+// Checklist dọn dẹp
+const TASKS = [
+  { id:'photos', icon:'🖼️', title:'Xoá ảnh trùng lặp & ảnh mờ',
+    tip:'Dùng Google Photos → Tiện ích → “Dọn dẹp”, hoặc mục “Ảnh trùng lặp” trong app Ảnh của điện thoại.' },
+  { id:'junk',   icon:'🗂️', title:'Dọn file rác, cache & file tải về',
+    tip:'Cài đặt → Bộ nhớ → Dọn dẹp; xoá file cài đặt .apk/.dmg cũ, thư mục Downloads, video/giáo trình đã học xong.' },
+  { id:'email',  icon:'✉️', title:'Xoá email cũ, quảng cáo & thùng rác',
+    tip:'Tìm “larger:10M” hoặc “category:promotions” trong Gmail, xoá hàng loạt rồi dọn mục Thư rác/Thùng rác.' },
+  { id:'chat',   icon:'💬', title:'Làm sạch nhóm chat & media nặng',
+    tip:'Zalo/Messenger/Telegram: Quản lý dung lượng → xoá video, file trong các nhóm lớp không còn dùng; rời nhóm thừa.' },
+];
+
+// Tốc độ dữ liệu streaming trung bình (MB / giờ) – giá trị tham khảo
+const QUALITY = {
+  video: [ {k:'HD 1080p', mb:3000}, {k:'720p', mb:1500}, {k:'SD 480p', mb:700}, {k:'SD 360p', mb:400}, {k:'144p', mb:150} ],
+  audio: [ {k:'Nhạc chất lượng cao (320 kbps)', mb:144}, {k:'Nhạc thường (160 kbps)', mb:72}, {k:'Nhạc tiết kiệm (96 kbps)', mb:43} ],
+};
+
+// Hệ số quy đổi: [thấp, giữa, cao] – hiển thị minh bạch ở màn hình 4
+const ASSUMP = {
+  storage: { label:'Lưu trữ (kWh / GB / năm)',          v:[0.005, 0.015, 0.03],  unit:'kWh/GB·năm' },
+  network: { label:'Truyền tải + data center (kWh / GB)', v:[0.02, 0.05, 0.10],    unit:'kWh/GB' },
+  screen:  { label:'Điện thoại bật màn hình (kWh / giờ)', v:[0.0015, 0.0025, 0.004], unit:'kWh/giờ' },
+  grid:    { label:'Phát thải lưới điện (kg CO₂ / kWh)',  v:[0.55, 0.66, 0.85],    unit:'kgCO₂/kWh' },
+};
+
+// Bạn học minh hoạ cho bảng xếp hạng (ẩn danh)
+const MOCK_PEERS = [
+  {n:'Gấu Trúc 07', gb:3.2, min:420, mb:5200, trees:14},
+  {n:'Sóc Nâu 12',  gb:2.4, min:300, mb:3100, trees:10},
+  {n:'Cú Mèo 03',   gb:1.8, min:540, mb:2400, trees:18},
+  {n:'Hươu Sao 21', gb:1.1, min:150, mb:1800, trees:5},
+  {n:'Ếch Xanh 09', gb:0.7, min:210, mb:900,  trees:7},
+  {n:'Rùa Biển 15', gb:0.3, min:90,  mb:400,  trees:3},
+];
+
+/* ---------- 2) STATE & LOCALSTORAGE ---------- */
+const defaultState = () => ({
+  profile: null,          // {name, classCode, phoneGB, driveGB, emailGB, baselineMin, shotName}
+  tasks: {},              // {taskId: {done:bool}}
+  cleanLog: [],           // [{ts, task, before, after, gb}]
+  streamLog: [],          // [{ts, type, minutes, from, to, mb}]
+  sessions: [],           // [{ts, min}]
+  withered: 0,            // số cây héo (bỏ cuộc)
+});
+let state = load();
+
+function load(){
+  try { return Object.assign(defaultState(), JSON.parse(localStorage.getItem(LS_KEY)) || {}); }
+  catch(e){ return defaultState(); }
+}
+function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} }
+
+/* ---------- 3) TIỆN ÍCH ---------- */
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => Math.max(0, parseFloat(v) || 0);
+const fmt = (n, d=2) => (Math.round(n * 10**d) / 10**d).toLocaleString('vi-VN', {maximumFractionDigits:d});
+// Định dạng số nhỏ (kWh): tự chọn số chữ số thập phân
+const fmtSmall = n => n >= 1 ? fmt(n,2) : n >= 0.01 ? fmt(n,3) : fmt(n,4);
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg;
+  t.style.opacity = 1; clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.style.opacity = 0, 2400);
+}
+
+// Tổng hợp số liệu
+const totalGB  = () => state.cleanLog.reduce((s,x)=>s+x.gb, 0);
+const totalMB  = () => state.streamLog.reduce((s,x)=>s+x.mb, 0);
+const totalMin = () => state.sessions.reduce((s,x)=>s+x.min, 0);
+
+// Tuần hiện tại (bắt đầu từ thứ Hai 00:00)
+function weekStart(d=new Date()){
+  const x = new Date(d); const day = (x.getDay()+6)%7;
+  x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x;
+}
+const weekGB = () => state.cleanLog.filter(l => l.ts >= weekStart().getTime()).reduce((s,x)=>s+x.gb,0);
+
+// Điểm xếp hạng
+const score = (gb, min, mb) => Math.round(20*gb + min/3 + mb/200);
+
+/* ---------- 4) ĐIỀU HƯỚNG ---------- */
+const SCREENS = [
+  {id:'clean',  icon:'🧹', label:'Dọn rác'},
+  {id:'forest', icon:'🌳', label:'Rừng xanh'},
+  {id:'impact', icon:'📊', label:'Tác động'},
+  {id:'onboard',icon:'👤', label:'Hồ sơ'},
+];
+function buildNav(){
+  const html = (mobile) => SCREENS.map(s => mobile
+    ? `<button data-go="${s.id}" class="py-2 flex flex-col items-center text-xs font-semibold text-slate-500"><span class="text-xl">${s.icon}</span>${s.label}</button>`
+    : `<button data-go="${s.id}" class="px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-leaf-50">${s.icon} ${s.label}</button>`).join('');
+  $('#navDesktop').innerHTML = html(false);
+  $('#navMobile').innerHTML  = html(true);
+  $$('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+}
+function go(id){
+  // Chưa có hồ sơ → bắt buộc làm khảo sát nền
+  if (!state.profile && id !== 'onboard') { id = 'onboard'; toast('Hãy hoàn thành khảo sát nền trước nhé 🌱'); }
+  $$('.screen').forEach(s => s.classList.toggle('active', s.id === 's-'+id));
+  $$('[data-go]').forEach(b => {
+    const on = b.dataset.go === id;
+    b.classList.toggle('tab-active', on);
+    b.classList.toggle('text-slate-500', !on && b.parentElement.id==='navMobile');
+  });
+  location.hash = id;
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (id==='clean') renderClean();
+  if (id==='forest') renderForest();
+  if (id==='impact') renderImpact();
+  if (id==='onboard') fillOnboard();
+}
+function renderChip(){
+  $('#userChip').textContent = state.profile ? '👋 ' + state.profile.name : '';
+}
+
+/* ---------- 5) MÀN HÌNH 1: KHẢO SÁT NỀN ---------- */
+function fillOnboard(){
+  const p = state.profile; if (!p) return;
+  $('#ob-name').value = p.name; $('#ob-class').value = p.classCode;
+  $('#ob-phone').value = p.phoneGB; $('#ob-drive').value = p.driveGB; $('#ob-email').value = p.emailGB;
+  $('#ob-min').value = p.baselineMin || '';
+}
+$('#ob-shot').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f);
+  $('#ob-preview').innerHTML = `<img src="${url}" class="max-h-48 rounded-lg" alt="Screen Time">`;
+  toast('Đã nhận ảnh. Nhớ nhập số phút trung bình/ngày nhé!');
+});
+$('#onboardForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const file = $('#ob-shot').files[0];
+  state.profile = {
+    name: $('#ob-name').value.trim(), classCode: $('#ob-class').value.trim(),
+    phoneGB: num($('#ob-phone').value), driveGB: num($('#ob-drive').value), emailGB: num($('#ob-email').value),
+    baselineMin: num($('#ob-min').value),
+    shotName: file ? file.name : (state.profile?.shotName || ''),
+  };
+  save(); renderChip(); toast('Đã lưu hồ sơ! Bắt đầu dọn rác nào 🧹'); go('clean');
+});
+$('#btnDemo').addEventListener('click', () => {
+  // Dữ liệu mẫu giúp xem trước giao diện
+  const now = Date.now(), day = 864e5;
+  state = defaultState();
+  state.profile = {name:'Minh Anh', classCode:'K68-CNTT2', phoneGB:96, driveGB:11.5, emailGB:6.2, baselineMin:360, shotName:''};
+  TASKS.forEach(t => state.tasks[t.id] = {done:true});
+  state.cleanLog = [
+    {ts:now-2*day, task:'photos', before:48, after:46.9, gb:1.1},
+    {ts:now-1*day, task:'junk',   before:30, after:29.4, gb:0.6},
+    {ts:now-3*day, task:'email',  before:6.2, after:5.9, gb:0.3},
+  ];
+  state.streamLog = [{ts:now-day, type:'music', minutes:120, from:'HD 1080p', to:'Nhạc thường (160 kbps)', mb:5856}];
+  state.sessions = [{ts:now-day,min:25},{ts:now-day,min:25},{ts:now-2*day,min:45},{ts:now,min:15}];
+  save(); renderChip(); toast('Đã nạp dữ liệu mẫu ✨'); go('impact');
+});
+
+/* ---------- 6) MÀN HÌNH 2: DỌN RÁC & STREAMING ---------- */
+function renderClean(){
+  $('#c-totalGB').textContent = fmt(totalGB()) + ' GB';
+  $('#c-totalMB').textContent = fmt(totalMB(),0) + ' MB';
+  $('#c-doneTasks').textContent = TASKS.filter(t => state.tasks[t.id]?.done).length + '/' + TASKS.length;
+
+  $('#cleanList').innerHTML = TASKS.map(t => {
+    const done = !!state.tasks[t.id]?.done;
+    const last = [...state.cleanLog].reverse().find(l => l.task === t.id);
+    return `
+    <div class="card p-4 ${done?'bg-leaf-50':''}">
+      <div class="flex items-start gap-3">
+        <input type="checkbox" data-chk="${t.id}" ${done?'checked':''} class="mt-1.5 w-5 h-5 accent-green-600">
+        <div class="flex-1">
+          <div class="font-semibold">${t.icon} ${t.title}</div>
+          <div class="text-xs text-slate-500 mt-0.5">${t.tip}</div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 items-end">
+            <div><label class="label">Trước khi dọn (GB)</label><input data-b="${t.id}" type="number" min="0" step="0.01" class="input" placeholder="0"></div>
+            <div><label class="label">Sau khi dọn (GB)</label><input data-a="${t.id}" type="number" min="0" step="0.01" class="input" placeholder="0"></div>
+            <div class="text-sm">Đã dọn: <b data-r="${t.id}" class="text-leaf-700">0 GB</b></div>
+            <button data-add="${t.id}" class="btn btn-primary">Ghi nhận</button>
+          </div>
+          ${last ? `<div class="text-xs text-leaf-700 mt-2">Lần gần nhất: −${fmt(last.gb)} GB (${new Date(last.ts).toLocaleDateString('vi-VN')})</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Sự kiện checklist
+  $$('[data-chk]').forEach(c => c.onchange = () => { state.tasks[c.dataset.chk] = {done:c.checked}; save(); renderClean(); });
+  // Tính realtime GB đã dọn = trước − sau (không âm)
+  const calc = id => Math.max(0, num($(`[data-b="${id}"]`).value) - num($(`[data-a="${id}"]`).value));
+  $$('[data-b],[data-a]').forEach(i => i.oninput = () => {
+    const id = i.dataset.b || i.dataset.a;
+    $(`[data-r="${id}"]`).textContent = fmt(calc(id)) + ' GB';
+  });
+  $$('[data-add]').forEach(btn => btn.onclick = () => {
+    const id = btn.dataset.add, b = num($(`[data-b="${id}"]`).value), a = num($(`[data-a="${id}"]`).value);
+    if (b <= a) return toast('Dung lượng sau phải nhỏ hơn trước khi dọn');
+    state.cleanLog.push({ts:Date.now(), task:id, before:b, after:a, gb:b-a});
+    state.tasks[id] = {done:true}; save(); toast(`🎉 Đã dọn ${fmt(b-a)} GB!`); renderClean();
+  });
+  renderStreamForm(); renderStreamLog();
+}
+
+// --- Streaming ---
+function streamOptions(){
+  const type = $('#st-type').value;
+  return type === 'video' ? QUALITY.video : QUALITY.audio;
+}
+function renderStreamForm(keep){
+  const opts = streamOptions();
+  const mk = (sel) => opts.map((o,i)=>`<option value="${i}" ${i===sel?'selected':''}>${o.k}</option>`).join('');
+  const type = $('#st-type').value;
+  // Gợi ý mặc định: nghe nhạc/podcast → từ video HD xuống audio-only
+  if (!keep) {
+    if (type === 'video') { $('#st-from').innerHTML = mk(0); $('#st-to').innerHTML = mk(2); }
+    else { $('#st-from').innerHTML = mk(0); $('#st-to').innerHTML = mk(Math.min(2, opts.length-1)); }
+  }
+  calcStream();
+}
+function calcStream(){
+  const type = $('#st-type').value, opts = streamOptions();
+  const from = opts[+$('#st-from').value], to = opts[+$('#st-to').value];
+  const hours = num($('#st-min').value) / 60;
+  let mb = 0;
+  if (type !== 'video') {
+    // Nghe nhạc/podcast: so với việc để video HD 1080p chạy, bật chế độ chỉ âm thanh
+    mb = Math.max(0, (QUALITY.video[0].mb - to.mb)) * hours * 0 + Math.max(0, from.mb - to.mb) * hours;
+  } else {
+    mb = Math.max(0, from.mb - to.mb) * hours;
+  }
+  calcStream.val = mb;
+  $('#st-result').textContent = fmt(mb,0) + ' MB' + (mb>=1024 ? ` (≈ ${fmt(mb/1024)} GB)` : '');
+  $('#st-tip').innerHTML = type === 'video'
+    ? '💡 <b>Mẹo:</b> Chỉ cần theo dõi bài giảng/tin tức? Hạ xuống 480p hoặc 360p – bạn vẫn nghe rõ mà tiết kiệm 75–85% dữ liệu so với 1080p.'
+    : '💡 <b>Mẹo:</b> Khi chỉ nghe nhạc/podcast, hãy tắt hình (hoặc bật chế độ “chỉ âm thanh”) và chọn chất lượng thấp hơn – tiết kiệm đáng kể mà không ảnh hưởng trải nghiệm.';
+}
+['st-type','st-min','st-from','st-to'].forEach(id => {
+  $('#'+id).addEventListener(id==='st-type' ? 'change' : 'input', () => id==='st-type' ? renderStreamForm() : calcStream());
+});
+$('#st-add').addEventListener('click', () => {
+  const opts = streamOptions(), mb = calcStream.val;
+  if (mb <= 0) return toast('Hãy chọn chất lượng mới thấp hơn chất lượng cũ');
+  state.streamLog.push({ts:Date.now(), type:$('#st-type').value, minutes:num($('#st-min').value),
+    from:opts[+$('#st-from').value].k, to:opts[+$('#st-to').value].k, mb});
+  save(); toast(`📉 Tránh tải ${fmt(mb,0)} MB`); renderClean();
+});
+function renderStreamLog(){
+  const icons = {music:'🎧', podcast:'🎙️', video:'🎬'};
+  $('#st-log').innerHTML = state.streamLog.slice(-5).reverse().map(l =>
+    `<div class="flex justify-between bg-white border border-leaf-100 rounded-lg px-3 py-2">
+      <span>${icons[l.type]} ${l.minutes}′ · ${esc(l.from)} → ${esc(l.to)}</span><b class="text-leaf-700">−${fmt(l.mb,0)} MB</b></div>`).join('')
+    || '<div class="text-slate-400">Chưa có ghi nhận streaming nào.</div>';
+}
+
+/* ---------- 7) MÀN HÌNH 3: FOCUS TIMER & RỪNG ---------- */
+const timer = { total:25*60, endAt:0, running:false, tick:null };
+
+// Cây lớn dần theo tiến độ phiên
+const stageTree = p => p < .25 ? ['🌱',44] : p < .5 ? ['🌿',56] : p < .85 ? ['🪴',68] : ['🌳',84];
+
+function fmtTime(s){ s=Math.max(0,Math.ceil(s)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function drawTimer(){
+  const remain = timer.running ? (timer.endAt - Date.now())/1000 : timer.total;
+  const p = timer.running ? 1 - remain/timer.total : 0;
+  $('#f-time').textContent = fmtTime(remain);
+  $('#f-bar').style.width = (p*100)+'%';
+  const [e,size] = timer.running ? stageTree(p) : ['🌱',64];
+  $('#f-tree').textContent = e; $('#f-tree').style.fontSize = size+'px';
+}
+function setPreset(m){
+  if (timer.running) return;
+  timer.total = m*60; drawTimer();
+  $$('#f-presets [data-m]').forEach(b => b.classList.toggle('!bg-leaf-600', +b.dataset.m===m) || b.classList.toggle('!text-white', +b.dataset.m===m));
+}
+$$('#f-presets [data-m]').forEach(b => b.onclick = () => setPreset(+b.dataset.m));
+$('#f-custom').addEventListener('change', e => { const m = Math.min(180, Math.max(1, +e.target.value||0)); if (m) setPreset(m); });
+
+function startTimer(){
+  timer.running = true; timer.endAt = Date.now() + timer.total*1000;
+  $('#f-start').classList.add('hidden'); $('#f-give').classList.remove('hidden');
+  $('#f-msg').textContent = '📵 Hãy úp điện thoại xuống và làm việc khác. Cây đang lớn…';
+  timer.tick = setInterval(() => {
+    if (timer.endAt - Date.now() <= 0) return finishTimer();
+    drawTimer();
+  }, 250);
+  drawTimer();
+}
+function stopTimer(){
+  clearInterval(timer.tick); timer.running = false;
+  $('#f-start').classList.remove('hidden'); $('#f-give').classList.add('hidden');
+}
+function finishTimer(){
+  const min = Math.round(timer.total/60);
+  stopTimer();
+  state.sessions.push({ts:Date.now(), min}); save();
+  $('#f-msg').textContent = `🎉 Hoàn thành ${min} phút! Một cây mới đã được trồng.`;
+  toast('🌳 Bạn vừa trồng thêm một cây!');
+  drawTimer(); renderForest(true);
+  try { navigator.vibrate && navigator.vibrate([200,100,200]); } catch(e){}
+}
+$('#f-start').onclick = startTimer;
+$('#f-give').onclick = () => {
+  if (!confirm('Bỏ cuộc giữa chừng, cây sẽ héo. Bạn chắc chứ?')) return;
+  stopTimer(); state.withered++; save();
+  $('#f-tree').textContent = '🥀'; $('#f-time').textContent = fmtTime(timer.total); $('#f-bar').style.width = '0%';
+  $('#f-msg').textContent = 'Cây đã héo 🥀 – thử lại phiên ngắn hơn nhé!';
+};
+// Cảnh báo khi rời trang giữa phiên
+window.addEventListener('beforeunload', e => { if (timer.running) { e.preventDefault(); e.returnValue = ''; } });
+
+function renderForest(popLast){
+  $('#f-class').textContent = state.profile ? '· ' + esc(state.profile.classCode) : '';
+  $('#f-trees').textContent = state.sessions.length;
+  $('#f-mins').textContent = totalMin();
+
+  // Thử thách tuần
+  const g = weekGB(), pct = Math.min(100, g*100);
+  const ws = weekStart(), we = new Date(ws.getTime()+6*864e5);
+  $('#w-range').textContent = `Tuần ${ws.toLocaleDateString('vi-VN')} – ${we.toLocaleDateString('vi-VN')}`;
+  $('#w-bar').style.width = pct + '%';
+  $('#w-now').textContent = fmt(g) + ' GB';
+  $('#w-msg').textContent = g >= 1 ? '🏅 Tuyệt vời! Bạn đã hoàn thành thử thách tuần này.' : `Còn ${fmt(1-g)} GB nữa là đạt mục tiêu – thử dọn thêm ảnh trùng hoặc file tải về nhé!`;
+
+  // Rừng: cây của bạn + cây bạn học (mờ)
+  const mine = state.sessions.map(s => s.min >= 45 ? '🌲' : s.min >= 25 ? '🌳' : '🌴');
+  const peers = MOCK_PEERS.reduce((s,p)=>s+p.trees,0);
+  const shown = Math.min(peers, 40);
+  let html = mine.map((t,i) => `<span class="${popLast && i===mine.length-1 ? 'tree-pop':''}" title="Cây của bạn">${t}</span>`).join('');
+  html += `<span class="opacity-40">${'🌳'.repeat(shown)}</span>`;
+  if (peers > shown) html += `<span class="text-xs text-slate-400 self-end">+${peers-shown}</span>`;
+  if (!mine.length) html = '<span class="text-sm text-slate-400 self-center">Chưa có cây nào – hãy bắt đầu một phiên tập trung! </span>' + html;
+  $('#forestGrid').innerHTML = html;
+
+  // Bảng xếp hạng ẩn danh
+  const me = {n:'Bạn', gb:totalGB(), min:totalMin(), mb:totalMB(), me:true};
+  const rows = [...MOCK_PEERS, me].map(r => ({...r, pts:score(r.gb,r.min,r.mb)})).sort((a,b)=>b.pts-a.pts);
+  const medals = ['🥇','🥈','🥉'];
+  $('#leaderboard').innerHTML = rows.map((r,i) => `
+    <li class="flex items-center justify-between rounded-xl px-3 py-2 ${r.me?'bg-leaf-100 border border-leaf-300 font-bold':'bg-leaf-50'}">
+      <span>${medals[i]||('#'+(i+1))} ${r.me?'Bạn ('+esc(state.profile?.name||'')+')':esc(r.n)}</span>
+      <span class="text-sm">${r.pts} điểm <span class="text-xs text-slate-500 font-normal">· ${fmt(r.gb,1)} GB</span></span>
+    </li>`).join('');
+}
+
+/* ---------- 8) MÀN HÌNH 4: IMPACT & ECO-CARD ---------- */
+// Tính kWh và CO2 theo kịch bản: 0=thấp, 1=giữa, 2=cao
+function impact(gb, mb, min){
+  const out = [];
+  for (let i=0;i<3;i++){
+    const kwh = gb*ASSUMP.storage.v[i] + (mb/1024)*ASSUMP.network.v[i] + (min/60)*ASSUMP.screen.v[i];
+    out.push({kwh, co2g: kwh*ASSUMP.grid.v[i]*1000});
+  }
+  return out; // [thấp, giữa, cao]
+}
+function renderImpact(){
+  const gb = totalGB(), mb = totalMB(), min = totalMin();
+  $('#i-gb').textContent = fmt(gb) + ' GB';
+  $('#i-mb').textContent = fmt(mb,0) + ' MB';
+  $('#i-min').textContent = fmt(min,0) + ' phút';
+
+  const [lo,mid,hi] = impact(gb,mb,min);
+  $('#i-kwh').textContent = fmtSmall(mid.kwh) + ' kWh';
+  $('#i-kwh-r').textContent = `Khoảng ${fmtSmall(lo.kwh)} – ${fmtSmall(hi.kwh)} kWh`;
+  $('#i-co2').textContent = fmt(mid.co2g, mid.co2g<10?2:1) + ' g CO₂';
+  $('#i-co2-r').textContent = `Khoảng ${fmt(lo.co2g,1)} – ${fmt(hi.co2g,1)} g`;
+  // So sánh dễ hình dung: 1 lần sạc điện thoại ≈ 0.012 kWh
+  $('#i-eq').innerHTML = `≈ <b>${fmt(mid.kwh/0.012,1)}</b> lần sạc đầy điện thoại (≈ 12 Wh/lần). Con số nhỏ – nhưng nhân với cả lớp và cả năm học sẽ lớn dần!`;
+
+  $('#assumpTable').innerHTML = Object.values(ASSUMP).map(a =>
+    `<tr><td class="py-1.5 pr-2">${a.label}</td>${a.v.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('');
+
+  const p = state.profile;
+  if (p) {
+    const base = p.phoneGB + p.driveGB + p.emailGB;
+    $('#i-base').innerHTML = `
+      Dung lượng ban đầu: <b>${fmt(base,1)} GB</b> (điện thoại ${p.phoneGB} · Drive ${p.driveGB} · Email ${p.emailGB}).
+      Đã dọn <b class="text-leaf-700">${fmt(gb)} GB</b> (${base?fmt(gb/base*100,1):0}% so với ban đầu).<br>
+      Screen Time nền: <b>${p.baselineMin||'—'} phút/ngày</b>${p.baselineMin ? ` · tổng phút rời màn hình tương đương <b>${fmt(min/p.baselineMin*100,1)}%</b> của một ngày dùng điện thoại điển hình của bạn.` : '.'}`;
+  }
+}
+
+// --- Vẽ Eco-card bằng Canvas ---
+function drawEcoCard(){
+  const gb = totalGB(), mb = totalMB(), min = totalMin();
+  const [lo,mid,hi] = impact(gb,mb,min);
+  const W=1080, H=1350, c = document.createElement('canvas'); c.width=W; c.height=H;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#14532d'); g.addColorStop(1,'#22c55e');
+  x.fillStyle = g; x.fillRect(0,0,W,H);
+  // vòng trang trí
+  x.globalAlpha=.08; x.fillStyle='#fff'; [[900,200,260],[100,1150,300]].forEach(([a,b,r])=>{x.beginPath();x.arc(a,b,r,0,7);x.fill();}); x.globalAlpha=1;
+  x.fillStyle='#fff'; x.textAlign='center';
+  x.font='bold 110px sans-serif'; x.fillText('🌱',W/2,190);
+  x.font='800 72px sans-serif'; x.fillText('GreenByte Eco-card',W/2,300);
+  x.font='500 38px sans-serif'; x.fillStyle='#dcfce7';
+  x.fillText((state.profile?.name||'Sinh viên xanh') + (state.profile?' · '+state.profile.classCode:''),W/2,365);
+  // 3 chỉ số
+  const items = [[fmt(gb)+' GB','đã dọn rác số'],[fmt(mb,0)+' MB','streaming tránh tải'],[fmt(min,0)+' phút','rời màn hình']];
+  items.forEach((it,i)=>{
+    const y = 440 + i*190;
+    x.fillStyle='rgba(255,255,255,.15)'; x.beginPath(); x.roundRect(90,y,900,160,32); x.fill();
+    x.fillStyle='#fff'; x.font='800 64px sans-serif'; x.fillText(it[0],W/2,y+75);
+    x.fillStyle='#dcfce7'; x.font='500 34px sans-serif'; x.fillText(it[1],W/2,y+125);
+  });
+  x.fillStyle='#fff'; x.font='700 48px sans-serif';
+  x.fillText(`≈ ${fmtSmall(mid.kwh)} kWh · ${fmt(mid.co2g,1)} g CO₂`,W/2,1075);
+  x.fillStyle='#dcfce7'; x.font='500 30px sans-serif';
+  x.fillText(`Khoảng ước tính: ${fmtSmall(lo.kwh)}–${fmtSmall(hi.kwh)} kWh · ${fmt(lo.co2g,1)}–${fmt(hi.co2g,1)} g CO₂`,W/2,1125);
+  x.font='400 26px sans-serif'; x.fillText('Quy đổi dựa trên giả định công khai – xem chi tiết trong ứng dụng.',W/2,1175);
+  x.font='600 34px sans-serif'; x.fillStyle='#fff'; x.fillText('Dọn rác số · Nuôi rừng xanh 🌳',W/2,1270);
+  return c;
+}
+$('#btnCard').onclick = () => {
+  const a = document.createElement('a'); a.download = 'greenbyte-eco-card.png';
+  a.href = drawEcoCard().toDataURL('image/png'); a.click(); toast('Đã tải Eco-card 🖼️');
+};
+$('#btnShare').onclick = async () => {
+  const [ ,mid ] = impact(totalGB(),totalMB(),totalMin());
+  const text = `🌱 GreenByte: mình đã dọn ${fmt(totalGB())} GB rác số, tránh tải ${fmt(totalMB(),0)} MB streaming, rời màn hình ${totalMin()} phút (≈ ${fmt(mid.co2g,1)} g CO₂ – ước tính). Cùng dọn rác số nhé!`;
+  try {
+    const blob = await new Promise(r => drawEcoCard().toBlob(r,'image/png'));
+    const file = new File([blob],'greenbyte-eco-card.png',{type:'image/png'});
+    if (navigator.canShare && navigator.canShare({files:[file]})) return await navigator.share({text, files:[file]});
+    if (navigator.share) return await navigator.share({text});
+    await navigator.clipboard.writeText(text); toast('Đã sao chép nội dung chia sẻ 📋');
+  } catch(e){ if (e.name!=='AbortError') toast('Không chia sẻ được – hãy dùng “Tải Eco-card”'); }
+};
+$('#btnEdit').onclick = () => go('onboard');
+$('#btnReset').onclick = () => {
+  if (!confirm('Xoá toàn bộ dữ liệu GreenByte trên trình duyệt này?')) return;
+  localStorage.removeItem(LS_KEY); state = defaultState(); renderChip(); toast('Đã xoá dữ liệu'); go('onboard');
+};
+
+/* ---------- 9) KHỞI ĐỘNG ---------- */
+buildNav(); renderChip(); setPreset(25);
+const start = location.hash.replace('#','');
+go(state.profile ? (SCREENS.some(s=>s.id===start) ? start : 'clean') : 'onboard');
+</script>
+</body>
+</html>
